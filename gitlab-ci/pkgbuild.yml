@@ -8,9 +8,7 @@
 # NOTE: these are sensible defaults for Ripple pipelines. These
 # can be overridden by project or group variables as needed.
 variables:
-  # these containers are built manually using the rippled
-  # cmake build (container targets) and tagged/pushed so they
-  # can be used here
+  # these containers are built manually and tagged/pushed so they can be used here
   RPM_CONTAINER_TAG: "2023-02-13"
   RPM_CONTAINER_NAME: "rippled-rpm-builder"
   RPM_CONTAINER_FULLNAME: "${RPM_CONTAINER_NAME}:${RPM_CONTAINER_TAG}"

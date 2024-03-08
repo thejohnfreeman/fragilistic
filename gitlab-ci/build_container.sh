@@ -15,14 +15,28 @@ if docker pull "${ARTIFACTORY_HUB}/${container_name}:latest_${CI_COMMIT_REF_SLUG
     docker tag \
        "${ARTIFACTORY_HUB}/${container_name}:latest_${CI_COMMIT_REF_SLUG}" \
        "${container_name}:latest_${CI_COMMIT_REF_SLUG}"
-    CMAKE_EXTRA="-D${pkgtype}_cache_from=${container_name}:latest_${CI_COMMIT_REF_SLUG}"
+    args=(--cache-from "${container_name}:latest_${CI_COMMIT_REF_SLUG}")
 fi
 
-cmake --version
-test -d build && rm -rf build
-mkdir -p build/container && cd build/container
-eval time \
-    cmake -Dpackages_only=ON -DCMAKE_VERBOSE_MAKEFILE=ON ${CMAKE_EXTRA} \
-    -G Ninja ../..
-time cmake --build . --target "${pkgtype}_container" -- -v
+commit_hash=$(git log --pretty=%H -1)
+container_label=${commit_hash}
 
+if [ "${pkgtype}" = "dpkg" ] ; then
+    args+=(--build-arg DIST_TAG=18.04)
+fi
+
+if [ "${pkgtype}" = "rpm" ] ; then
+    docker build \
+        --pull \
+        --build-arg GIT_COMMIT=${commit_hash} \
+        -t rippleci/rippled-${pkgtype}-builder:${container_label} \
+        "${args[@]}" \
+        -f centos-builder/Dockerfile .
+elif [ "${pkgtype}" = "dpkg" ] ; then
+    docker build \
+        --pull \
+        --build-arg GIT_COMMIT=${commit_hash} \
+        -t rippled-${pkgtype}-builder:${container_label} \
+        "${args[@]}" \
+        -f ubuntu-builder/Dockerfile .
+fi

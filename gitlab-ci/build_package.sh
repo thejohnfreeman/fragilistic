@@ -16,13 +16,14 @@ docker tag \
   "${ARTIFACTORY_HUB}/${container_name}" \
   "${container_name}"
 docker images
+
 test -d build && rm -rf build
-mkdir -p build/${pkgtype} && cd build/${pkgtype}
-time cmake \
-  -Dpackages_only=ON \
-  -Dcontainer_label="${container_tag}" \
-  -Dhave_package_container=ON \
-  -DCMAKE_VERBOSE_MAKEFILE=ON \
-  -Dunity=OFF \
-  -G Ninja ../..
-time cmake --build . --target ${pkgtype} -- -v
+mkdir -p build/${pkgtype}
+
+container_label=${container_tag}
+
+docker run \
+    -v ${PWD}:/opt/rippled_bld/pkg/rippled \
+    -v ${PWD}/build/${pkgtype}:/opt/rippled_bld/pkg/out \
+    -t rippled-${pkgtype}-builder:${container_label} \
+    /bin/bash -c "cp -fpu fragilistic/packaging/${pkgtype}/build_${pkgtype}.sh . && ./build_${pkgtype}.sh"
